@@ -179,6 +179,25 @@ async function loginClient(client, token) {
   spinner.succeed(chalk.green(`Logged in as ${chalk.white.bold(client.user.tag)}`));
 }
 
+// ─── Post-command pause ───────────────────────────────────────────────────────
+async function afterCommand() {
+  console.log('');
+  console.log(chalk.cyan('  ────────────────────────────────────────────────'));
+  const ans = await ask(
+    chalk.gray('  [Enter] ') + chalk.white('Back to menu') +
+    chalk.gray('   [0] ') + chalk.red('Exit') +
+    chalk.gray('   [m] ') + chalk.cyan('Show menu') +
+    '  → '
+  );
+  const val = ans.trim().toLowerCase();
+  if (val === '0') {
+    console.log(chalk.red('\n  [!] Shutting down HEAVEN CONTROL PANEL...\n'));
+    process.exit(0);
+  }
+  if (val === 'm') return 'menu';
+  return 'continue';
+}
+
 // ─── Main Control Panel Loop ──────────────────────────────────────────────────
 async function runControlPanel(client, guild) {
   loadCommands(commands);
@@ -199,41 +218,52 @@ async function runControlPanel(client, guild) {
         const input = await ask(chalk.cyan('  createChannels ') + chalk.gray('<count> <name>: '));
         const [count, ...nameParts] = input.trim().split(/\s+/);
         await commands.get('createChannels').execute(guild, [count, nameParts.join('-') || 'channel']);
+        const r1 = await afterCommand();
+        if (r1 === 'menu') printMenu(client.user.tag, guild.name);
         break;
       }
       case '2': {
         const input = await ask(chalk.cyan('  createRoles ') + chalk.gray('<count> <name>: '));
         const [count, ...nameParts] = input.trim().split(/\s+/);
         await commands.get('createRoles').execute(guild, [count, nameParts.join('-') || 'role']);
+        const r2 = await afterCommand();
+        if (r2 === 'menu') printMenu(client.user.tag, guild.name);
         break;
       }
       case '3':
         await commands.get('serverInfo').execute(guild);
+        { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case '4':
         await commands.get('memberTools').execute(guild);
+        { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case '5': {
         const input = await ask(chalk.cyan('  sendMessage ') + chalk.gray('<channelId> <message>: '));
         const [channelId, ...msgParts] = input.trim().split(/\s+/);
         await commands.get('sendMessage').execute(guild, [channelId, ...msgParts]);
+        const r5 = await afterCommand();
+        if (r5 === 'menu') printMenu(client.user.tag, guild.name);
         break;
       }
       case '6':
         showAccessList();
+        { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case '7':
         showWhitelist();
+        { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case '8':
         loadCommands(commands);
         logger.success('Commands reloaded');
+        { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case '9':
         await commands.get('systemStats').execute(client);
+        { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case 's': {
-        // Switch server without switching token
         const newGuild = await selectServer(client);
         if (newGuild) {
           guild = newGuild;
@@ -244,7 +274,6 @@ async function runControlPanel(client, guild) {
       case 't': {
         const newToken = await switchToken(client);
         if (newToken) {
-          // Return signal to outer boot loop
           return { action: 'switchToken', token: newToken };
         }
         break;
