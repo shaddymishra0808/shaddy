@@ -1,0 +1,359 @@
+Create an ultra-fast, highly secure Discord bot using Node.js and discord.js v14 with an advanced hacker-style terminal control panel that shows live logs for every action and allows full control directly from the terminal.
+
+The bot must feel like a real hacker console tool with instant response, real-time execution logs, progress indicators, and a clean command menu system.
+
+The project must be production-ready and optimized to run on AWS EC2, VPS, Replit, PM2, and local machines.
+
+=====================================
+
+CORE TECHNOLOGY REQUIREMENTS
+
+Use the following technologies:
+
+Node.js
+discord.js v14
+fs
+readline
+chalk
+ora
+cli-progress
+dotenv
+
+Coding requirements:
+
+• Use async/await everywhere
+• Use Promise.all batching for speed
+• Use Map for command handlers
+• Load JSON files once into memory
+• Use caching for performance
+• Response execution must start under 150ms
+
+=====================================
+
+CONFIGURATION SYSTEM
+
+Create config.js:
+
+module.exports = {
+prefix: "+"
+};
+
+Create environment configuration using dotenv.
+
+.env
+
+BOT_TOKEN=
+CLIENT_ID=
+OWNER_ID=
+PREFIX=+
+
+Create ".env.example" for deployment.
+
+The bot must load configuration dynamically.
+
+=====================================
+
+PROJECT STRUCTURE
+
+heaven-bot/
+
+index.js
+config.js
+package.json
+.env
+.env.example
+
+data/
+access.json
+whitelist.json
+
+commands/
+createChannels.js
+createRoles.js
+serverInfo.js
+sendMessage.js
+memberTools.js
+systemStats.js
+
+utils/
+logger.js
+loader.js
+permissions.js
+
+=====================================
+
+HACKER STYLE TERMINAL CONTROL PANEL
+
+When the bot starts show banner:
+
+=========================================
+HEAVEN CONTROL PANEL v1.0
+Ultra Fast Execution Mode Enabled
+
+After login the bot must fetch all servers and display:
+
+[1] Server Name — ID
+[2] Server Name — ID
+[3] Server Name — ID
+
+Prompt:
+
+Select server number:
+
+After selecting show:
+
+CONNECTED TO: SERVER NAME
+
+=====================================
+
+TERMINAL COMMAND MENU
+
+Display a clickable number-style menu:
+
+[1] Create channels
+[2] Create roles
+[3] Server information
+[4] Member list
+[5] Send message
+[6] Show access list
+[7] Show whitelist
+[8] Reload commands
+[9] System stats
+[0] Exit
+
+User selects a number and the action executes.
+
+=====================================
+
+LIVE HACKER STYLE LOGGING (IMPORTANT)
+
+Console must show logs immediately after every action.
+
+Example:
+
+[✓] Channel created: logs-1
+[✓] Channel created: logs-2
+[✓] Role created: staff-1
+[✓] Role created: staff-2
+
+Show progress counter:
+
+Progress: 3/50 complete
+
+Final output:
+
+SUCCESS: 50/50 completed
+
+Logs must use chalk colors.
+
+=====================================
+
+REAL TIME EXECUTION
+
+Each action must log instantly when completed.
+
+Do NOT wait until all tasks finish.
+
+Use console.log with chalk.
+
+=====================================
+
+CHANNEL CREATION COMMAND
+
+Example:
+
+createChannels 10 logs
+
+Output example:
+
+[✓] Channel created: logs-1
+[✓] Channel created: logs-2
+
+=====================================
+
+ROLE CREATION COMMAND
+
+Example:
+
+createRoles 5 staff
+
+Output example:
+
+[✓] Role created: staff-1
+[✓] Role created: staff-2
+
+=====================================
+
+MESSAGE SYSTEM
+
+Send messages to channels.
+
+Example:
+
+sendMessage channelId Hello world
+
+=====================================
+
+SERVER INFORMATION
+
+Display:
+
+server name
+server ID
+member count
+channel count
+role count
+
+=====================================
+
+MEMBER TOOLS
+
+Fetch and display members with progress indicator.
+
+=====================================
+
+SYSTEM MONITORING
+
+Display:
+
+bot uptime
+memory usage
+CPU usage
+
+=====================================
+
+ACCESS CONTROL SYSTEM
+
+Create access.json.
+
+Only the following users can control the bot:
+
+• owner
+• users inside access.json
+
+Admin permissions must NOT bypass the access system.
+
+Example:
+
+{
+"users": []
+}
+
+Owner can add or remove users.
+
+=====================================
+
+WHITELIST SYSTEM
+
+Create whitelist.json.
+
+Users in whitelist cannot be affected by moderation commands.
+
+Example:
+
+{
+"users": []
+}
+
+=====================================
+
+SECURITY REQUIREMENTS
+
+Never affect:
+
+• owner
+• bot itself
+• whitelist users
+
+Never modify:
+
+• @everyone role
+
+=====================================
+
+PERFORMANCE REQUIREMENTS
+
+Bot must be extremely fast.
+
+Use:
+
+Promise.all batching
+parallel execution
+Map handler system
+cache system
+minimal disk reads
+
+=====================================
+
+DEPENDENCIES
+
+discord.js
+chalk
+ora
+cli-progress
+dotenv
+
+=====================================
+
+HOSTING SUPPORT
+
+The bot must work on:
+
+AWS EC2
+VPS
+Replit
+Local machine
+PM2
+
+=====================================
+
+START COMMAND
+
+npm install
+node index.js
+
+=====================================
+
+PM2 SUPPORT
+
+npm install pm2 -g
+pm2 start index.js
+
+=====================================
+
+AWS DEPLOYMENT READY
+
+Ensure project supports:
+
+• environment variables
+• production logging
+• stable process execution
+• minimal memory usage
+
+=====================================
+
+OUTPUT REQUIREMENT
+
+Provide complete working code including:
+
+index.js
+config.js
+package.json
+.env.example
+
+access.json
+whitelist.json
+
+commands folder with all commands
+utils folder with helpers
+
+The bot must run immediately after inserting:
+
+BOT_TOKEN
+CLIENT_ID
+OWNER_ID
+
+=====================================
+
+The terminal interface must feel like a real hacker console control panel with instant live logs and fast execution.
+
