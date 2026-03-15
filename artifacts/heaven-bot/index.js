@@ -174,8 +174,14 @@ function createClient() {
 
 async function loginClient(client, token) {
   const spinner = ora({ text: chalk.cyan('Connecting to Discord...'), color: 'cyan' }).start();
+  // Register listener BEFORE login so we never miss the event
+  const readyPromise = new Promise((resolve, reject) => {
+    client.once('clientReady', resolve);
+    client.once('error', reject);
+    setTimeout(() => reject(new Error('Login timed out after 30s')), 30000);
+  });
   await client.login(token);
-  await new Promise((resolve) => client.once('clientReady', resolve));
+  await readyPromise;
   spinner.succeed(chalk.green(`Logged in as ${chalk.white.bold(client.user.tag)}`));
 }
 
