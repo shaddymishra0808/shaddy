@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Ultra-fast hacker-style Discord bot with terminal control panel",
   "main": "index.js",
+  "bin": "index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",

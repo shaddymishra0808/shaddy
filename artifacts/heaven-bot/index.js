@@ -91,15 +91,18 @@ async function selectServer(client) {
 // ─── Menu ─────────────────────────────────────────────────────────────────────
 function printMenu(botTag, guildName) {
   console.log('');
-  console.log(chalk.cyan.bold('  ── COMMAND MENU ──────────────────────────────'));
-  console.log(`  ${chalk.green('[1]')} ${chalk.white('Create channels')}       ${chalk.green('[6]')} ${chalk.white('Show access list')}`);
-  console.log(`  ${chalk.green('[2]')} ${chalk.white('Create roles')}          ${chalk.green('[7]')} ${chalk.white('Show whitelist')}`);
-  console.log(`  ${chalk.green('[3]')} ${chalk.white('Server information')}    ${chalk.green('[8]')} ${chalk.white('Reload commands')}`);
-  console.log(`  ${chalk.green('[4]')} ${chalk.white('Member list')}           ${chalk.green('[9]')} ${chalk.white('System stats')}`);
-  console.log(`  ${chalk.green('[5]')} ${chalk.white('Send message')}          ${chalk.green('[s]')} ${chalk.white('Switch server')}`);
-  console.log(`  ${chalk.yellow('[t]')} ${chalk.yellow('Switch bot token')}      ${chalk.red('[0]')} ${chalk.white('Exit')}`);
-  console.log(chalk.cyan('  ────────────────────────────────────────────────'));
-  console.log(chalk.gray(`  Logged in as: ${botTag}  |  Server: ${guildName}`));
+  console.log(chalk.cyan.bold('  ── COMMAND MENU ──────────────────────────────────────'));
+  console.log(`  ${chalk.green('[1]')}  ${chalk.white('Create channels')}        ${chalk.green('[8]')}  ${chalk.white('Reload commands')}`);
+  console.log(`  ${chalk.green('[2]')}  ${chalk.white('Create roles')}           ${chalk.green('[9]')}  ${chalk.white('System stats')}`);
+  console.log(`  ${chalk.green('[3]')}  ${chalk.white('Server information')}     ${chalk.green('[s]')}  ${chalk.white('Switch server')}`);
+  console.log(`  ${chalk.green('[4]')}  ${chalk.white('Member list')}            ${chalk.yellow('[t]')}  ${chalk.yellow('Switch bot token')}`);
+  console.log(`  ${chalk.green('[5]')}  ${chalk.white('Send message')}           ${chalk.green('[6]')}  ${chalk.white('Show access list')}`);
+  console.log(`  ${chalk.red('[d1]')} ${chalk.red('Delete all channels')}    ${chalk.green('[7]')}  ${chalk.white('Show whitelist')}`);
+  console.log(`  ${chalk.red('[d2]')} ${chalk.red('Delete all roles')}       ${chalk.red('[d3]')} ${chalk.red('NUKE (channels+roles)')}`);
+  console.log(`  ${chalk.magenta('[sp]')} ${chalk.magenta('Spam a channel')}        ${chalk.magenta('[sa]')} ${chalk.magenta('Spam ALL channels')}`);
+  console.log(`  ${chalk.red('[0]')}  ${chalk.white('Exit')}`);
+  console.log(chalk.cyan('  ──────────────────────────────────────────────────────'));
+  console.log(chalk.gray(`  Bot: ${botTag}  |  Server: ${guildName}`));
   console.log('');
 }
 
@@ -245,9 +248,7 @@ async function runControlPanel(client, guild) {
         { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
       case '5': {
-        const input = await ask(chalk.cyan('  sendMessage ') + chalk.gray('<channelId> <message>: '));
-        const [channelId, ...msgParts] = input.trim().split(/\s+/);
-        await commands.get('sendMessage').execute(guild, [channelId, ...msgParts]);
+        await commands.get('sendMessage').execute(guild, ['pick'], ask);
         const r5 = await afterCommand();
         if (r5 === 'menu') printMenu(client.user.tag, guild.name);
         break;
@@ -269,6 +270,66 @@ async function runControlPanel(client, guild) {
         await commands.get('systemStats').execute(client);
         { const r = await afterCommand(); if (r === 'menu') printMenu(client.user.tag, guild.name); }
         break;
+      case 'd1': {
+        logger.warn('This will delete ALL channels. Type "yes" to confirm: ');
+        const c1 = await ask(chalk.red('  Confirm (yes): '));
+        if (c1.trim().toLowerCase() === 'yes') {
+          await commands.get('deleteChannels').execute(guild);
+        } else { logger.warn('Cancelled.'); }
+        const rd1 = await afterCommand();
+        if (rd1 === 'menu') printMenu(client.user.tag, guild.name);
+        break;
+      }
+      case 'd2': {
+        logger.warn('This will delete ALL roles. Type "yes" to confirm: ');
+        const c2 = await ask(chalk.red('  Confirm (yes): '));
+        if (c2.trim().toLowerCase() === 'yes') {
+          await commands.get('deleteRoles').execute(guild);
+        } else { logger.warn('Cancelled.'); }
+        const rd2 = await afterCommand();
+        if (rd2 === 'menu') printMenu(client.user.tag, guild.name);
+        break;
+      }
+      case 'd3': {
+        logger.warn('NUKE: Delete ALL channels + ALL roles. Type "nuke" to confirm: ');
+        const c3 = await ask(chalk.red('  Confirm (nuke): '));
+        if (c3.trim().toLowerCase() === 'nuke') {
+          await commands.get('deleteAll').execute(guild);
+        } else { logger.warn('Cancelled.'); }
+        const rd3 = await afterCommand();
+        if (rd3 === 'menu') printMenu(client.user.tag, guild.name);
+        break;
+      }
+      case 'sp': {
+        const textChannels = [...guild.channels.cache.filter(c => c.isTextBased()).values()];
+        logger.divider();
+        console.log(chalk.magenta.bold('  SELECT CHANNEL TO SPAM'));
+        logger.divider();
+        textChannels.forEach((c, i) => {
+          console.log(`  ${chalk.green(`[${i + 1}]`)} ${chalk.white('#' + c.name)} ${chalk.gray(`— ${c.id}`)}`);
+        });
+        logger.divider();
+        const spPick = await ask(chalk.cyan('  Channel number: '));
+        const spIdx = parseInt(spPick.trim()) - 1;
+        if (isNaN(spIdx) || spIdx < 0 || spIdx >= textChannels.length) {
+          logger.error('Invalid selection.'); break;
+        }
+        const spChannel = textChannels[spIdx];
+        const spCount = await ask(chalk.cyan('  How many times: '));
+        const spMsg = await ask(chalk.cyan('  Message: '));
+        await commands.get('spamChannel').execute(guild, [spChannel.id, spCount.trim(), ...spMsg.trim().split(' ')]);
+        const rsp = await afterCommand();
+        if (rsp === 'menu') printMenu(client.user.tag, guild.name);
+        break;
+      }
+      case 'sa': {
+        const saCount = await ask(chalk.cyan('  Messages per channel: '));
+        const saMsg = await ask(chalk.cyan('  Message: '));
+        await commands.get('spamAll').execute(guild, [saCount.trim(), ...saMsg.trim().split(' ')]);
+        const rsa = await afterCommand();
+        if (rsa === 'menu') printMenu(client.user.tag, guild.name);
+        break;
+      }
       case 's': {
         const newGuild = await selectServer(client);
         if (newGuild) {
