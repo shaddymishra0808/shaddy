@@ -11,13 +11,31 @@ const permissions = require('./utils/permissions');
 // ─── Command Registry ─────────────────────────────────────────────────────────
 const commands = new Map();
 
-// ─── Shared readline (created once, lives forever) ────────────────────────────
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-rl.on('close', () => { console.log(chalk.red('\n  [!] Terminal closed. Shutting down.')); process.exit(0); });
+// ─── Resilient readline (recreates if stdin closes unexpectedly) ──────────────
+let rl = null;
+
+function getRL() {
+  if (!rl || rl.closed) {
+    rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+    rl.on('close', () => {
+      rl = null;
+      // stdin closed by environment (e.g. Replit checkpoint) — do NOT exit,
+      // just let the next ask() recreate the interface.
+    });
+  }
+  return rl;
+}
 
 function ask(question) {
-  return new Promise((resolve) => rl.question(question, resolve));
+  return new Promise((resolve) => {
+    const iface = getRL();
+    iface.question(question, (ans) => resolve(ans));
+  });
 }
+
+// Graceful shutdown only on explicit signals
+process.on('SIGINT', () => { console.log(chalk.red('\n  [!] SIGINT received. Shutting down.')); process.exit(0); });
+process.on('SIGTERM', () => { console.log(chalk.red('\n  [!] SIGTERM received. Shutting down.')); process.exit(0); });
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
 function printBanner() {
