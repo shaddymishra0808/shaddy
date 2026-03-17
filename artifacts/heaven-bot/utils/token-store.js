@@ -5,28 +5,44 @@ const path = require('path');
 const isPkg = typeof process.pkg !== 'undefined';
 const storeDir = isPkg ? path.dirname(process.execPath) : path.join(__dirname, '..');
 const storePath = path.join(storeDir, 'saved-token.json');
-const envPath = path.join(storeDir, '.env');
+const envPath   = path.join(storeDir, '.env');
+const batPath   = path.join(storeDir, 'run.bat');
+const ps1Path   = path.join(storeDir, 'start.ps1');
 
-// Update or create BOT_TOKEN line in .env file
+// ─── .env ─────────────────────────────────────────────────────────────────────
 function updateEnvFile(token) {
   try {
-    let content = '';
-    if (fs.existsSync(envPath)) {
-      content = fs.readFileSync(envPath, 'utf8');
-    }
-
+    let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
     if (content.match(/^BOT_TOKEN=.*/m)) {
-      // Replace existing BOT_TOKEN line
       content = content.replace(/^BOT_TOKEN=.*/m, `BOT_TOKEN=${token}`);
     } else {
-      // Add BOT_TOKEN line at the top
       content = `BOT_TOKEN=${token}\n` + content;
     }
-
     fs.writeFileSync(envPath, content, 'utf8');
   } catch {}
 }
 
+// ─── run.bat ──────────────────────────────────────────────────────────────────
+function updateBatFile(token) {
+  try {
+    if (!fs.existsSync(batPath)) return;
+    let content = fs.readFileSync(batPath, 'utf8');
+    content = content.replace(/^set BOT_TOKEN=.*/m, `set BOT_TOKEN=${token}`);
+    fs.writeFileSync(batPath, content, 'utf8');
+  } catch {}
+}
+
+// ─── start.ps1 ────────────────────────────────────────────────────────────────
+function updatePs1File(token) {
+  try {
+    if (!fs.existsSync(ps1Path)) return;
+    let content = fs.readFileSync(ps1Path, 'utf8');
+    content = content.replace(/^\$env:BOT_TOKEN = ".*"/m, `$env:BOT_TOKEN = "${token}"`);
+    fs.writeFileSync(ps1Path, content, 'utf8');
+  } catch {}
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 function loadToken() {
   try {
     if (fs.existsSync(storePath)) {
@@ -39,10 +55,10 @@ function loadToken() {
 
 function saveToken(token) {
   try {
-    // Save to JSON store
     fs.writeFileSync(storePath, JSON.stringify({ token }, null, 2));
-    // Also update .env file automatically
     updateEnvFile(token);
+    updateBatFile(token);
+    updatePs1File(token);
   } catch {}
 }
 
