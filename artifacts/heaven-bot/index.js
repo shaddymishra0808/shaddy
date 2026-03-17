@@ -1,5 +1,4 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, Options, sweepStaleGuilds } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Options } = require('discord.js');
 const readline = require('readline');
 const chalk = require('chalk');
 const ora = require('ora');
@@ -7,6 +6,7 @@ const config = require('./config');
 const logger = require('./utils/logger');
 const { loadCommands } = require('./utils/loader');
 const permissions = require('./utils/permissions');
+const tokenStore = require('./utils/token-store');
 
 // ─── Command Registry ─────────────────────────────────────────────────────────
 const commands = new Map();
@@ -430,6 +430,8 @@ async function boot(token) {
     const retry = await ask(chalk.yellow('  Enter a different token, or press Enter to exit: '));
     const trimmed = retry.trim();
     if (!trimmed) process.exit(1);
+    tokenStore.saveToken(trimmed);
+    logger.success('Token saved — will auto-load next time.');
     return boot(trimmed);
   }
 
@@ -441,6 +443,8 @@ async function boot(token) {
   if (!guild) {
     const newToken = await ask(chalk.yellow('  Enter new bot token: '));
     if (newToken.trim()) {
+      tokenStore.saveToken(newToken.trim());
+      logger.success('Token saved — will auto-load next time.');
       client.removeAllListeners();
       await client.destroy();
       return boot(newToken.trim());
@@ -451,6 +455,8 @@ async function boot(token) {
   const result = await runControlPanel(client, guild);
 
   if (result?.action === 'switchToken') {
+    tokenStore.saveToken(result.token);
+    logger.success('Token saved — will auto-load next time.');
     return boot(result.token);
   }
 }
@@ -458,10 +464,12 @@ async function boot(token) {
 // ─── Entry Point ──────────────────────────────────────────────────────────────
 if (!config.token) {
   printBanner();
-  console.log(chalk.yellow('  No BOT_TOKEN found in environment.\n'));
+  console.log(chalk.yellow('  No saved token found.\n'));
   ask(chalk.yellow('  Enter bot token to continue: ')).then((token) => {
     const trimmed = token.trim();
     if (!trimmed) { logger.error('No token provided. Exiting.'); process.exit(1); }
+    tokenStore.saveToken(trimmed);
+    logger.success('Token saved — will auto-load next time.');
     boot(trimmed);
   });
 } else {

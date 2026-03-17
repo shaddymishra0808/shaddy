@@ -1,6 +1,7 @@
 const path = require('path');
+const tokenStore = require('./utils/token-store');
 
-// When running as a pkg .exe, load .env from beside the executable
+// Load .env only if it exists (optional — no need to create it manually)
 const isPkg = typeof process.pkg !== 'undefined';
 const envPath = isPkg
   ? path.join(path.dirname(process.execPath), '.env')
@@ -10,7 +11,8 @@ require('dotenv').config({ path: envPath });
 
 module.exports = {
   prefix: process.env.PREFIX || '+',
-  token: process.env.BOT_TOKEN,
+  // Priority: Replit Secret / .env → saved token file
+  token: process.env.BOT_TOKEN || tokenStore.loadToken(),
   clientId: process.env.CLIENT_ID,
   ownerId: process.env.OWNER_ID,
 };
