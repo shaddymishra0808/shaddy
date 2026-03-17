@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Options, sweepStaleGuilds } = require('discord.js');
 const readline = require('readline');
 const chalk = require('chalk');
 const ora = require('ora');
@@ -11,6 +11,14 @@ const permissions = require('./utils/permissions');
 // ─── Command Registry ─────────────────────────────────────────────────────────
 const commands = new Map();
 
+// ─── Crash Protection ─────────────────────────────────────────────────────────
+process.on('uncaughtException', (err) => {
+  logger.error(`Uncaught Exception: ${err.message}`);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled Rejection: ${reason?.message || reason}`);
+});
+
 // ─── Resilient readline (recreates if stdin closes unexpectedly) ──────────────
 let rl = null;
 
@@ -19,8 +27,6 @@ function getRL() {
     rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
     rl.on('close', () => {
       rl = null;
-      // stdin closed by environment (e.g. Replit checkpoint) — do NOT exit,
-      // just let the next ask() recreate the interface.
     });
   }
   return rl;
@@ -143,7 +149,6 @@ async function switchToken(currentClient) {
     return null;
   }
 
-  // Basic token format check (three parts separated by dots)
   if (trimmed.split('.').length < 3) {
     logger.error('That does not look like a valid bot token.');
     return null;
@@ -172,12 +177,28 @@ function createClient() {
       GatewayIntentBits.GuildPresences,
     ],
     partials: [Partials.Message, Partials.Channel, Partials.GuildMember],
+    // ── Performance & reliability tweaks ──────────────────────────────────
+    rest: {
+      timeout: 60_000,      // wait up to 60 s for slow Discord API responses
+      retryLimit: 5,        // retry rate-limited / transient errors up to 5 times
+    },
+    makeCache: Options.cacheWithLimits({
+      ...Options.DefaultMakeCacheSettings,
+      MessageManager: 50,   // only keep last 50 messages per channel in RAM
+      ReactionManager: 0,   // no reaction caching needed
+      GuildStickerManager: 0,
+      GuildScheduledEventManager: 0,
+    }),
+    sweepers: {
+      ...Options.DefaultSweeperSettings,
+      messages: { interval: 300, lifetime: 600 }, // sweep old messages every 5 min
+      users:    { interval: 300, filter: () => (u) => u.bot && u.id !== u.client.user.id },
+    },
   });
 }
 
 async function loginClient(client, token) {
   const spinner = ora({ text: chalk.cyan('Connecting to Discord...'), color: 'cyan' }).start();
-  // Register listener BEFORE login so we never miss the event
   const readyPromise = new Promise((resolve, reject) => {
     client.once('clientReady', resolve);
     client.once('error', reject);
@@ -186,6 +207,22 @@ async function loginClient(client, token) {
   await client.login(token);
   await readyPromise;
   spinner.succeed(chalk.green(`Logged in as ${chalk.white.bold(client.user.tag)}`));
+}
+
+// ─── Auto-reconnect on disconnect ─────────────────────────────────────────────
+function attachReconnectHandler(client, token) {
+  client.on('shardDisconnect', (event, id) => {
+    logger.warn(`Shard ${id} disconnected (code ${event.code}). Reconnecting...`);
+  });
+  client.on('shardReconnecting', (id) => {
+    logger.info(`Shard ${id} reconnecting...`);
+  });
+  client.on('shardResume', (id, replayed) => {
+    logger.success(`Shard ${id} resumed (${replayed} events replayed)`);
+  });
+  client.on('shardError', (err, id) => {
+    logger.error(`Shard ${id} error: ${err.message}`);
+  });
 }
 
 // ─── Post-command pause ───────────────────────────────────────────────────────
@@ -365,6 +402,8 @@ async function boot(token) {
   client.on('error', (err) => logger.error(`Discord error: ${err.message}`));
   client.on('warn', (msg) => logger.warn(msg));
 
+  attachReconnectHandler(client, token);
+
   // Discord message prefix handler
   client.on('messageCreate', async (message) => {
     if (!message.content.startsWith(config.prefix)) return;
@@ -400,7 +439,6 @@ async function boot(token) {
 
   const guild = await selectServer(client);
   if (!guild) {
-    // User typed "back" on empty server list — ask for token
     const newToken = await ask(chalk.yellow('  Enter new bot token: '));
     if (newToken.trim()) {
       client.removeAllListeners();

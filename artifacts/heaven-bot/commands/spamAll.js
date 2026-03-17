@@ -1,6 +1,15 @@
 const chalk = require('chalk');
 const logger = require('../utils/logger');
 
+async function withRetry(fn, retries = 3, delayMs = 300) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try { return await fn(); } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs * attempt));
+    }
+  }
+}
+
 module.exports = {
   name: 'spamAll',
   description: 'Spam ALL text channels simultaneously',
@@ -36,7 +45,7 @@ module.exports = {
       for (let i = 0; i < count; i += BATCH) {
         const batchSize = Math.min(BATCH, count - i);
         const batch = Array.from({ length: batchSize }, () =>
-          channel.send(message)
+          withRetry(() => channel.send(message))
             .then(() => {
               totalSent++;
               logger.progress(totalSent + totalFailed, totalExpected, `#${channel.name}`);

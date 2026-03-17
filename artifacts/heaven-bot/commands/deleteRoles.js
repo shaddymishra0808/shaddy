@@ -2,6 +2,15 @@ const chalk = require('chalk');
 const logger = require('../utils/logger');
 const permissions = require('../utils/permissions');
 
+async function withRetry(fn, retries = 3, delayMs = 500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try { return await fn(); } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs * attempt));
+    }
+  }
+}
+
 module.exports = {
   name: 'deleteRoles',
   description: 'Delete all roles (except @everyone and whitelisted)',
@@ -25,10 +34,10 @@ module.exports = {
     const total = roles.size;
     const rolesArr = [...roles.values()];
 
-    const BATCH = 5;
+    const BATCH = 10;
     for (let i = 0; i < rolesArr.length; i += BATCH) {
       const batch = rolesArr.slice(i, i + BATCH).map(role =>
-        role.delete()
+        withRetry(() => role.delete())
           .then(() => {
             success++;
             logger.success(`Role deleted: ${role.name}`);

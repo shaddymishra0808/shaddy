@@ -1,6 +1,15 @@
 const chalk = require('chalk');
 const logger = require('../utils/logger');
 
+async function withRetry(fn, retries = 3, delayMs = 500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try { return await fn(); } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs * attempt));
+    }
+  }
+}
+
 module.exports = {
   name: 'deleteChannels',
   description: 'Delete all channels in the server',
@@ -20,10 +29,10 @@ module.exports = {
     const total = channels.size;
     const channelsArr = [...channels.values()];
 
-    const BATCH = 5;
+    const BATCH = 10;
     for (let i = 0; i < channelsArr.length; i += BATCH) {
       const batch = channelsArr.slice(i, i + BATCH).map(channel =>
-        channel.delete()
+        withRetry(() => channel.delete())
           .then(() => {
             success++;
             logger.success(`Channel deleted: ${channel.name}`);

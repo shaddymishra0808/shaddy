@@ -1,5 +1,14 @@
 const logger = require('../utils/logger');
 
+async function withRetry(fn, retries = 3, delayMs = 500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try { return await fn(); } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs * attempt));
+    }
+  }
+}
+
 module.exports = {
   name: 'createRoles',
   description: 'Create multiple roles with a base name',
@@ -18,13 +27,13 @@ module.exports = {
     let success = 0;
     let failed = 0;
 
-    const BATCH = 5;
+    const BATCH = 10;
     for (let i = 0; i < count; i += BATCH) {
       const batch = [];
       for (let j = i; j < Math.min(i + BATCH, count); j++) {
         const name = `${baseName}-${j + 1}`;
         batch.push(
-          guild.roles.create({ name })
+          withRetry(() => guild.roles.create({ name }))
             .then(() => {
               success++;
               logger.success(`Role created: ${name}`);
