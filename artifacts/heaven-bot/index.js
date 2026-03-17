@@ -54,11 +54,15 @@ function printBanner() {
   console.log(chalk.green('  ██║  ██║███████╗██║  ██║ ╚████╔╝ ███████╗██║ ╚████║'));
   console.log(chalk.green('  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝'));
   console.log('');
-  console.log(chalk.cyan('  ┌─────────────────────────────────────────────┐'));
-  console.log(chalk.cyan('  │') + chalk.white.bold('        HEAVEN CONTROL PANEL v1.0            ') + chalk.cyan('│'));
-  console.log(chalk.cyan('  │') + chalk.green('       Ultra Fast Execution Mode Enabled     ') + chalk.cyan('│'));
-  console.log(chalk.cyan('  │') + chalk.gray('       Node.js  •  discord.js v14            ') + chalk.cyan('│'));
-  console.log(chalk.cyan('  └─────────────────────────────────────────────┘'));
+  console.log(chalk.cyan('  ╔═════════════════════════════════════════════╗'));
+  console.log(chalk.cyan('  ║') + chalk.white.bold('        HEAVEN CONTROL PANEL  v1.0           ') + chalk.cyan('║'));
+  console.log(chalk.cyan('  ║') + chalk.green('       Ultra Fast Execution Mode Enabled     ') + chalk.cyan('║'));
+  console.log(chalk.cyan('  ║') + chalk.gray('       Node.js  •  discord.js v14            ') + chalk.cyan('║'));
+  console.log(chalk.cyan('  ╠═════════════════════════════════════════════╣'));
+  console.log(chalk.cyan('  ║') + chalk.gray('                                             ') + chalk.cyan('║'));
+  console.log(chalk.cyan('  ║') + chalk.gray('         Developed & Designed by  ') + chalk.magenta.bold('Zabro') + chalk.gray('       ') + chalk.cyan('║'));
+  console.log(chalk.cyan('  ║') + chalk.gray('                                             ') + chalk.cyan('║'));
+  console.log(chalk.cyan('  ╚═════════════════════════════════════════════╝'));
   console.log('');
 }
 
