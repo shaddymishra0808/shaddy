@@ -7,13 +7,31 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "build:exe": "pkg . --targets node18-win-x64 --output dist/heaven-bot.exe --compress GZip"
+  },
+  "pkg": {
+    "assets": [
+      "commands/**/*.js",
+      "utils/**/*.js",
+      "data/**/*.json",
+      "config.js"
+    ],
+    "scripts": [
+      "index.js",
+      "commands/**/*.js",
+      "utils/**/*.js",
+      "config.js"
+    ]
   },
   "dependencies": {
-    "discord.js": "^14.16.3",
     "chalk": "^4.1.2",
-    "ora": "^5.4.1",
     "cli-progress": "^3.12.0",
-    "dotenv": "^16.4.5"
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   }
 }

@@ -2,8 +2,23 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 
-const accessPath = path.join(__dirname, '../data/access.json');
-const whitelistPath = path.join(__dirname, '../data/whitelist.json');
+// When running as a pkg .exe, write data files beside the executable
+const isPkg = typeof process.pkg !== 'undefined';
+const dataDir = isPkg
+  ? path.join(path.dirname(process.execPath), 'data')
+  : path.join(__dirname, '../data');
+
+const accessPath = path.join(dataDir, 'access.json');
+const whitelistPath = path.join(dataDir, 'whitelist.json');
+
+// Auto-create data directory and files if they don't exist (first run)
+function ensureDataFiles() {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(accessPath)) fs.writeFileSync(accessPath, JSON.stringify({ users: [] }, null, 2));
+  if (!fs.existsSync(whitelistPath)) fs.writeFileSync(whitelistPath, JSON.stringify({ users: [] }, null, 2));
+}
+
+ensureDataFiles();
 
 let accessData = JSON.parse(fs.readFileSync(accessPath, 'utf8'));
 let whitelistData = JSON.parse(fs.readFileSync(whitelistPath, 'utf8'));
@@ -65,6 +80,7 @@ const getAccessList = () => ({ ...accessData });
 const getWhitelist = () => ({ ...whitelistData });
 
 const reload = () => {
+  ensureDataFiles();
   accessData = JSON.parse(fs.readFileSync(accessPath, 'utf8'));
   whitelistData = JSON.parse(fs.readFileSync(whitelistPath, 'utf8'));
 };
